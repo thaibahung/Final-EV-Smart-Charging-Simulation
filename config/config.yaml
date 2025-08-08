@@ -1,0 +1,16 @@
+# Time resolution
+time:
+  horizon_hours: 24      # 24h
+  step_minutes: 30       # 30-min steps
+
+# Build options
+network:
+  with_der: false        # set true to include CIGRE DER (PV/wind) that come with the test system
+
+# Profiles (optional): if empty, a smooth synthetic 24h profile is auto-generated
+profiles:
+  load_profile_file: ""  # CSV with columns: t,scale  (scale multiplies all loads P)
+  sgen_profile_file: ""  # CSV with columns: t,scale  (scale multiplies all sgens P if with_der=true)
+
+# Output folder
+outputs_dir: outputs
