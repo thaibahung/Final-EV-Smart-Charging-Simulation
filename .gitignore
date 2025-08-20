@@ -68,6 +68,5 @@ Thumbs.db
 
 # Project specific
 *.log
-*.csv
 results/
-output/
+outputs/

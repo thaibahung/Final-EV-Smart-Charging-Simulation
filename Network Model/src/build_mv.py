@@ -87,4 +87,9 @@ def build_network(with_der: bool = True):
     for bus, pkw, name in der_specs:
         _add_sgen_with_q_limits(net, bus, pkw, name, q_cap_ratio=0.33, set_at_max=(set_at_max and with_der))
 
+    # Add loads to LV buses 15, 16, and 17 (15, 16 connects to charging stations, current not working)
+    # pp.create_load(net, bus=_lv15, p_mw=0.06, q_mvar=0.02, name="Load_15")
+    # pp.create_load(net, bus=_lv16, p_mw=0.06, q_mvar=0.02, name="Load_16")
+    pp.create_load(net, bus=_lv17, p_mw=0.03, q_mvar=0.01, name="Load_17")
+
     return net
