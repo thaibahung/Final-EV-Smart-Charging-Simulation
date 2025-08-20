@@ -5,7 +5,7 @@ time:
 
 # Build options
 network:
-  with_der: false        # set true to include CIGRE DER (PV/wind) that come with the test system
+  with_der: true       # set true to include CIGRE DER (PV/wind) that come with the test system
 
 # Profiles (optional): if empty, a smooth synthetic 24h profile is auto-generated
 profiles:
