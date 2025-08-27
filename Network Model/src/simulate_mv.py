@@ -2,6 +2,7 @@ import argparse, os, yaml
 import numpy as np
 import pandas as pd
 import pandapower as pp
+from src.caps import compute_station_caps
 
 # Use absolute import
 import sys
@@ -60,7 +61,6 @@ def _assign_loads_to_buses(net, bus_profiles, t_idx, cos_phi):
     """Assign active and reactive power to buses."""
     for load_idx, load_row in net.load.iterrows():
         bus_idx = load_row.bus
-        print(bus_idx)
         if bus_idx in bus_profiles:
             p_mw = bus_profiles[bus_idx][t_idx] / 1000.0
             phi = np.arccos(cos_phi)
@@ -111,6 +111,16 @@ def _collect_results(net, t_idx, bus_rows, line_rows, trafo_rows):
             "q_lv_mvar": float(rt.get("q_lv_mvar", np.nan)),
         })
 
+# Calculate P_max_LV
+def run_pf_and_caps(net, trafo_for_cs, cos_phi: float):
+    """
+    Execute PF without EV injections and return station caps (kW).
+    """
+    # pp.runpp(net, algorithm="nr", calculate_voltage_angles=False, init="results")
+    caps = compute_station_caps(net, trafo_for_cs, cos_phi=cos_phi)
+    return caps
+
+
 def run(cfg):
     """Main simulation loop."""
     horizon_h = cfg["time"]["horizon_hours"]
@@ -118,7 +128,7 @@ def run(cfg):
     steps = int(horizon_h * 60 / step_min)
 
     with_der = bool(cfg["network"]["with_der"])
-    net = build_network(with_der=with_der)
+    net, ids = build_network(with_der=with_der)
 
     profile_dir = "Dataset/Dataset on Hourly Load Profiles for 24 Facilities (8760 hours)"
     cos_phi = 0.95
@@ -137,6 +147,9 @@ def run(cfg):
     outdir = cfg["outputs_dir"]
     _ensure_dir(outdir)
     bus_rows, line_rows, trafo_rows = [], [], []
+    cap_rows = []
+
+    trafo_for_cs = ids["trafos"]
 
     for t_idx in range(steps):
         _assign_loads_to_buses(net, scaled_profiles, t_idx, cos_phi)
@@ -155,20 +168,21 @@ def run(cfg):
 
         _collect_results(net, t_idx, bus_rows, line_rows, trafo_rows)
 
+        # Calculate the P_max_LV
+        caps_kw = run_pf_and_caps(net, trafo_for_cs, cos_phi=cos_phi)
+        
+        for cs_id, pmax_kw in caps_kw.items():
+            cap_rows.append({"t_idx": t_idx, "cs_id": cs_id, "pmax_kw": pmax_kw})
+
+    # Extract simulation result
     pd.DataFrame(bus_rows).to_csv(os.path.join(outdir, "bus_timeseries.csv"), index=False)
     pd.DataFrame(line_rows).to_csv(os.path.join(outdir, "line_timeseries.csv"), index=False)
     pd.DataFrame(trafo_rows).to_csv(os.path.join(outdir, "trafo_timeseries.csv"), index=False)
     print(f"Wrote {outdir}/bus_timeseries.csv, line_timeseries.csv, trafo_timeseries.csv")
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--config", required=True)
-    args = ap.parse_args()
+    caps_df = pd.DataFrame(cap_rows)
+    caps_df.to_csv(os.path.join(outdir, "cs_caps.csv"), index=False)
+    print(f"Wrote {len(caps_df)} rows → {os.path.join(outdir,'cs_caps.csv')}")
+
     
-    with open(args.config, "r") as f:
-        cfg = yaml.safe_load(f)
 
-    run(cfg)
-
-if __name__ == "__main__":
-    main()

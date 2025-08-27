@@ -68,6 +68,11 @@ def build_network(with_der: bool = True):
     _lv16, tr16 = _add_mv_lv_trafo(net, mv_bus=14, sn_mva=0.25, name="CS_Trafo_16")   
     _lv17, tr17 = _add_mv_lv_trafo(net, mv_bus=14, sn_mva=1.00, name="HH_Trafo_17")   
 
+    ids = {
+        "trafos": {"CS15": tr15, "CS16": tr16},
+        "lv_buses": {"CS15": _lv15, "CS16": _lv16},
+    }
+
     # --- Add your DER (as sgens) ---
     # If with_der=True, we let the time-series drive them (start at 0).
     # If you want them to sit at their nameplate when no CSV is provided, set set_at_max=True.
@@ -92,4 +97,4 @@ def build_network(with_der: bool = True):
     # pp.create_load(net, bus=_lv16, p_mw=0.06, q_mvar=0.02, name="Load_16")
     pp.create_load(net, bus=_lv17, p_mw=0.03, q_mvar=0.01, name="Load_17")
 
-    return net
+    return net, ids
