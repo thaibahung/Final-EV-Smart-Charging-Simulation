@@ -116,7 +116,7 @@ def run_pf_and_caps(net, trafo_for_cs, cos_phi: float):
     """
     Execute PF without EV injections and return station caps (kW).
     """
-    # pp.runpp(net, algorithm="nr", calculate_voltage_angles=False, init="results")
+    pp.runpp(net, algorithm="nr", calculate_voltage_angles=False, init="results")
     caps = compute_station_caps(net, trafo_for_cs, cos_phi=cos_phi)
     return caps
 
@@ -129,6 +129,8 @@ def run(cfg):
 
     with_der = bool(cfg["network"]["with_der"])
     net, ids = build_network(with_der=with_der)
+
+    print(ids)
 
     profile_dir = "Dataset/Dataset on Hourly Load Profiles for 24 Facilities (8760 hours)"
     cos_phi = 0.95
@@ -169,6 +171,7 @@ def run(cfg):
         _collect_results(net, t_idx, bus_rows, line_rows, trafo_rows)
 
         # Calculate the P_max_LV
+        print(net, trafo_for_cs)
         caps_kw = run_pf_and_caps(net, trafo_for_cs, cos_phi=cos_phi)
         
         for cs_id, pmax_kw in caps_kw.items():
@@ -184,5 +187,22 @@ def run(cfg):
     caps_df.to_csv(os.path.join(outdir, "cs_caps.csv"), index=False)
     print(f"Wrote {len(caps_df)} rows → {os.path.join(outdir,'cs_caps.csv')}")
 
-    
+
+def main():
+    parser = argparse.ArgumentParser(description="Simulate MV grid")
+    parser.add_argument("--config", required=True, help="Path to the configuration file")
+    args = parser.parse_args()
+
+    # Load configuration
+    with open(args.config, "r") as f:
+        config = yaml.safe_load(f)
+
+    # Build the network
+    net = build_network(config)
+
+    # Simulate the network
+    run(config)
+
+if __name__ == "__main__":
+    main()
 

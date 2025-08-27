@@ -22,6 +22,12 @@ def compute_station_caps(
     """
     caps = {}
     for cs_id, t_idx in trafo_for_cs.items():
+        
+        # if t_idx not in net.res_trafo.index or t_idx not in net.trafo.index:
+        #   raise ValueError(f"Transformer index {t_idx} not found in net.res_trafo or net.trafo")
+        
+        # print(cs_id, t_idx)
+        
         loading = float(net.res_trafo.loc[t_idx, "loading_percent"])  # %
         sn_mva  = float(net.trafo.loc[t_idx, "sn_mva"])               # MVA
 

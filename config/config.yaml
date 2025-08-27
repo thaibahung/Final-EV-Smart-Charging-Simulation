@@ -1,7 +1,7 @@
 # Time resolution
 time:
   horizon_hours: 24      # 24h
-  step_minutes: 30       # 30-min steps
+  step_minutes: 60       # 60-min steps
 
 # Build options
 network:
