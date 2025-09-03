@@ -9,6 +9,11 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from build_mv import build_network
 
+import os
+script_dir = os.path.dirname(os.path.abspath(__file__))
+der_csv_path = os.path.join(script_dir, '..', '..', 'Dataset', 'Dataset on DERs', 'DERs_dataset.csv')
+der_df = pd.read_csv(der_csv_path)
+
 def _ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
@@ -155,9 +160,17 @@ def run(cfg):
         _assign_loads_to_buses(net, scaled_profiles, t_idx, cos_phi)
 
         if with_der and len(net.sgen):
-            base_sgen_p = net.sgen["p_mw"].copy()
-            sgen_scale = np.ones(steps, dtype=float)
-            net.sgen["p_mw"] = base_sgen_p * sgen_scale[t_idx]
+            for idx, row in net.sgen.iterrows():
+                name = row["name"]
+                if "PV" in name:
+                    profile_val = der_df.loc[t_idx, "DE solar profile"]
+                elif "WIND" in name:
+                    profile_val = der_df.loc[t_idx, "DE wind profile"]
+                else:
+                    profile_val = 0.0
+                net.sgen.at[idx, "p_mw"] = row["max_p_mw"]
+
+                # print(t_idx, idx, row["max_p_mw"], net.sgen.at[idx, "p_mw"], profile_val)
 
         try:
             pp.runpp(net)
@@ -169,7 +182,7 @@ def run(cfg):
         _collect_results(net, t_idx, bus_rows, line_rows, trafo_rows)
 
         # Calculate the P_max_LV
-        print(net, trafo_for_cs)
+        # print(net, trafo_for_cs)
         caps_kw = run_pf_and_caps(net, trafo_for_cs, cos_phi=cos_phi)
         
         for cs_id, pmax_kw in caps_kw.items():

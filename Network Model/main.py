@@ -158,6 +158,10 @@ def main():
     args = parser.parse_args()
 
     if args.train_sac:
+        # Run simulation first to generate caps
+        with open(args.config, "r", encoding="utf-8") as f:
+            cfg = yaml.safe_load(f)
+        run(cfg)  # This will generate cs_caps.csv in the output directory
         train_sac_multi(args.outdir, args.n_plugs)
         return
 
