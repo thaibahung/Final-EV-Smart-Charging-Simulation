@@ -130,8 +130,6 @@ def run(cfg):
     with_der = bool(cfg["network"]["with_der"])
     net, ids = build_network(with_der=with_der)
 
-    print(ids)
-
     profile_dir = "Dataset/Dataset on Hourly Load Profiles for 24 Facilities (8760 hours)"
     cos_phi = 0.95
 

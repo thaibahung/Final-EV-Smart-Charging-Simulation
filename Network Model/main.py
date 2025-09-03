@@ -7,7 +7,7 @@ from pathlib import Path
 import os
 import yaml
 from src.build_mv import build_network
-from src.simulate_mv import run, run_pf_and_caps
+from src.simulate_mv import run, run_pf_and_caps, _collect_results
 from rl.multi_env_ev_cs import MultiEVRuntimeEnv
 from rl.sac_agent_multi import SACMultiAgent
 
@@ -68,8 +68,6 @@ def deploy_sac_multi(cfg_path: str, outdir: str, n_plugs: int):
     net, ids = build_network(cfg)
     lv_bus = ids["lv_buses"]["CS15"]
 
-    print(ids)
-
     trafo_for_cs = {"CS15": ids["trafos"]["CS15"]}
     # trafo_for_cs = ids["trafos"]
     
@@ -98,6 +96,8 @@ def deploy_sac_multi(cfg_path: str, outdir: str, n_plugs: int):
     cs_load_idx = pp.create_load(net, bus=lv_bus, p_mw=0.0, q_mvar=0.0, name="CS15_MULTI")
 
     log_rows = []
+    bus_rows, line_rows, trafo_rows = [], [], []
+
     for t in range(n_steps):
         # Apply arrivals of this step
         env.apply_arrivals(arrivals_by_t[t])
@@ -133,8 +133,14 @@ def deploy_sac_multi(cfg_path: str, outdir: str, n_plugs: int):
             "departed_penalty": info["departed_penalty"]
         })
 
+        _collect_results(net, t, bus_rows, line_rows, trafo_rows)
+
     pd.DataFrame(log_rows).to_csv(os.path.join(outdir, "cs15_multi_ev_log_sac.csv"), index=False)
-    print("[OK] Multi-EV SAC deployed → cs15_multi_ev_log_sac.csv")
+    print("Multi-EV SAC deployed → cs15_multi_ev_log_sac.csv")
+
+    pd.DataFrame(bus_rows).to_csv(os.path.join(outdir, "bus_timeseries_after.csv"), index=False)
+    pd.DataFrame(line_rows).to_csv(os.path.join(outdir, "line_timeseries_after.csv"), index=False)
+    pd.DataFrame(trafo_rows).to_csv(os.path.join(outdir, "trafo_timeseries_after.csv"), index=False)
 
 def main():
     parser = argparse.ArgumentParser(description="EV Smart Charging")

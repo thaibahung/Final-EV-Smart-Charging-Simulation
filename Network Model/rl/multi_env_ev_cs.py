@@ -185,6 +185,10 @@ class MultiEVRuntimeEnv:
 
         # departures now (post-update)
         departed = list(np.where((self.active > 0.5) & (self.rem_h <= 1e-9))[0])
+        # Ensure departed list is not empty
+        if not departed:
+            departed = []
+
         penalty = 0.0
         for i in departed:
             penalty += abs(float(self.target[i]) - float(self.soc[i]))
